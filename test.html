@@ -12,19 +12,15 @@
             position: relative;
             width: 100%;
             padding-bottom: 60%;
-            /* depends on svg ratio, for my zebra height/width = 1.2 so padding-bottom = 50% * 1.2 = 60% */
             vertical-align: middle;
-            /* top | middle | bottom ... do what you want */
         }
 
         .my-svg {
-            /* svg into : object, img or inline */
             display: block;
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            /* only required for <img /> */
             z-index: 0;
         }
 
@@ -32,7 +28,7 @@
             border: solid 1px rgba(221, 61, 16, 0.71);
         }
 
-        .rectangle {
+      /*  .rectangle {
             fill: lightblue;
             stroke: blue;
             stroke-width: 2px;
@@ -44,28 +40,28 @@
             stroke: #081c4e;
             stroke-width: 1px;
             stroke-dasharray: 5;
-        }
+        }*/
 
-        circle {
+      /*  circle {
             fill: lightgreen;
             stroke: green;
             stroke-width: 2px;
             fill-opacity: 0.5;
-        }
+        }*/
 
-        .rect-active {
-            fill: #1578db;
-        }
+     /*   .rect-active {
+            fill: red;
+        }*/
 
-        .pointC-active {
+       /* .pointC-active {
             fill: #FF8F00;
         }
 
         .circle-active {
-            fill: #4CAF50;
+            fill: red;
         }
-
-        path {
+*/
+      /*  path {
             fill: #ffb7b3;
             stroke: #ff4736;
             stroke-width: 5px;
@@ -76,26 +72,26 @@
             fill-opacity: 0.5;
             stroke: #0067ff;
             stroke-width: 2px;
-        }
-
+        }*/
+/*
         line {
             fill: none;
             stroke: #cd08ff;
             stroke-width: 2px;
-        }
+        }*/
 
-        polyline {
+      /*  polyline {
             fill: none;
             stroke: #563aff;
             stroke-width: 2px;
-        }
+        }*/
 
-        circle.handle {
+       /* circle.handle {
             fill: yellow;
             stroke: #cb9c0f;
             stroke-width: 2px;
             cursor: pointer;
-        }
+        }*/
     </style>
 </header>
 
@@ -107,11 +103,12 @@
     <script>
         d3.select('#poly').on('click', function () {
             new Polygon();
-        });
+        })
 
         var w = 600,
             h = 500;
-        var svgCanvas = d3.select('body').append('svg').attr("width", w).attr("height", h);
+        var svgCanvas = d3.select('body').append('svg').
+        	attr("width", w).attr("height", h).attr('id', 'canvasContainer');
 
         function Polygon() {
 
@@ -125,23 +122,31 @@
             var boundingRect;
             var shape;
             var gPoly;
+            let polygonSelected
 
-            svgCanvas.on("mousedown", setPoints)
-                .on("mousemove", drawline)
-                .on("mouseup", handleMouseUp)
-                .on('click', setPoints)
+            svgCanvas.on("mousedown", handleMouseDown)
+	                .on("mousemove", handleMouseMove)
+	                .on("mouseup", handleMouseUp)
+	                .on('click', handleMouseDown)
+	        d3.select('body').on('keyup', function(e) {
+	        	if(d3.event.keyCode === 46 || d3.event.keyCode === 8 ) {
+	            if(polygonSelected) {
+	            	console.log('polygonSelected', polygonSelected)
+	            	polygonSelected.remove()
+	            }
 
-            var dragBehavior = d3.drag().on("drag", alterPolygon);
-            //        var dragPolygon = d3.drag().on("drag", movePolygon(bbox));
+	        	}
 
-            //On mousedown - setting points for the polygon
-            function setPoints() {
-                console.log('setPoints', isDragging)
+	        })
 
+            var dragBehavior = d3.drag().on("drag", handleDragCircle);
+
+
+
+            //On mousedown
+            function handleMouseDown() {
                 if (isDragging) return;
-
                 isDrawing = true;
-
                 var plod = d3.mouse(this);
                 linePoint1 = {
                     x: plod[0],
@@ -154,6 +159,9 @@
                     .attr("cx", linePoint1.x)
                     .attr("cy", linePoint1.y)
                     .attr("r", 4)
+                    .attr('fill', 'seagreen')
+                    .attr('stroke', 'tomato')
+                    .attr('stroke-width', 3)
                     .attr("start-point", true)
                     .classed("handle", true)
                     .style("cursor", "pointer");
@@ -167,16 +175,18 @@
             }
 
             //on mousemove - appending SVG line elements to the points
-            function drawline() {
-                // console.log('drawline')
+            function handleMouseMove() {
+                // console.log('handleMouseMove')
                 if (isDrawing) {
                     linePoint2 = d3.mouse(this);
                     gContainer.select('line').remove();
                     gContainer.append('line')
                         .attr("x1", linePoint1.x)
                         .attr("y1", linePoint1.y)
-                        .attr("x2", linePoint2[0] + 2) //arbitary value must be substracted due to circle cursor hover not working
-                        .attr("y2", linePoint2[1] ); // arbitary values must be tested
+                        .attr("x2", linePoint2[0] + 2) 
+                        .attr("y2", linePoint2[1] )
+                        .attr('stroke', 'red')
+                        .attr('stroke-width', 3)
 
                 }
             }
@@ -188,7 +198,7 @@
                 gContainer.select('line').remove();
                 gContainer.select('polyline').remove();
 
-                gContainer.append('polyline').attr('points', polyPoints);
+                gContainer.append('polyline').attr('points', polyPoints).style('fill', 'none').attr('stroke', 'red').attr('stroke-width', 3);
 
                 gContainer.selectAll('circle').remove();
 
@@ -197,6 +207,9 @@
                         .attr('cx', polyPoints[i][0])
                         .attr('cy', polyPoints[i][1])
                         .attr('r', 4)
+                        .attr('stroke', 'seagreen')
+                        .attr('fill', '#000')
+                        .attr('stroke-width', 3)
                         .attr("handle", true)
                         .classed("handle", true);
 
@@ -207,28 +220,44 @@
             //Called on mousedown if mousedown point if a polygon handle
             function completePolygon() {
                 console.log('completePolygon')
-
                 d3.select('g.drawPoly').remove();
-
                 gPoly = svgCanvas.append('g')
                     .classed("polygon", true);
 
-                    console.log('polyPoints', polyPoints)
-
+                    // console.log('polyPoints', polyPoints)
                 polyPoints.splice(polyPoints.length - 1);
-                //console.log(polyPoints);
-
                 
                     gPoly.append("polygon")
-                    .attr("points", polyPoints);
+                    .attr("points", polyPoints).attr('fill', getRandomColor()).attr('stroke', 'red').attr('stroke-width', 3)
 
                 for (var i = 0; i < polyPoints.length; i++) {
                     gPoly.append('circle')
                         .attr("cx", polyPoints[i][0])
                         .attr("cy", polyPoints[i][1])
                         .attr("r", 4)
+                        .attr('fill', 'red')
+                        .attr('stroke', 'black')
+                        .attr('stroke-width', 3)
                         .call(dragBehavior);
                 }
+
+                 d3.selectAll('polygon').on('click', function() {
+            			
+            		 d3.selectAll('polygon').style('stroke', 'red')
+                 	 d3.select(this).style('stroke', 'black')
+
+                 	 console.log('d3.select', d3)
+
+
+                 	polygonSelected =  d3.select(this)
+
+
+                 })
+
+
+            // .on('click', function() { console.log('ajshdajkhsdkjhasd') })
+            //        var dragPolygon = d3.drag().on("drag", movePolygon(bbox));
+
 
                 isDrawing = false;
                 isDragging = true;
@@ -257,20 +286,18 @@
                 //          polyEL.attr("transform", "translate(" + 0 + "," + 0 + ")");
                 //
 
-                console.log('gPolygon', gPoly);
-                console.log('gContainer', gPoly);
+                // console.log('gPolygon', gPoly);
+                // console.log('gContainer', gPoly);
                 
                 gPoly.call(d3.drag().on("drag", function (d) {
-                    // console.log('isDrawing', isDrawing)
                      d3.select(this).attr("transform", "translate(" + (d.x = d3.event.x) + "," + (d.y = d3.event.y) + ")")
                 }));
 
             }
 
             //Altering polygon coordinates based on handle drag
-            function alterPolygon() {
-                console.log('alterPolygon laksdalksdajsdlkajsd')
-
+            function handleDragCircle() {
+                // console.log('handleDragCircle laksdalksdajsdlkajsd')
                 if (isDrawing === true) return;
 
                 var alteredPoints = [];
@@ -302,6 +329,17 @@
 
                 // bbox = parentNode._groups[0][0].getBBox();
                 // console.log(bbox);
+            }
+
+            function getRandomColor() {
+            	let letters = '0123456789ABCDEF'.split('');
+
+            	let color = '#'
+            	for(let i = 0; i < 6; i++) {
+            		color += letters[Math.floor(Math.random() * 16)]
+            	}
+
+            	return color
             }
 
             // function movePolygon() {
